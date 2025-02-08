@@ -4,7 +4,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.nicolas.product_backend.models.Product;
+import com.nicolas.product_backend.models.Product; 
+import com.nicolas.product_backend.models.Category;
+import com.nicolas.product_backend.repositories.CategoryRepository;
+import com.nicolas.product_backend.repositories.ProductRepository;
+import com.nicolas.product_backend.services.ProductService;
 
 import jakarta.annotation.PostConstruct;
 
@@ -13,15 +17,19 @@ import java.security.cert.CertPathValidatorException.Reason;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+//import java.util.Locale.Category;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 //https://learn.microsoft.com/pt-br/azure/architecture/best-practices/api-design
@@ -36,73 +44,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 @CrossOrigin // proteção do navegador para erro cors
 public class ProductController {
 
-    // private List<Product> products = new ArrayList<>();
-    private List<Product> products = new ArrayList<>();
+    
+    @Autowired
+    private ProductRepository productRepository;    
+    @Autowired
+    private CategoryRepository categoryRepository;   
+    @Autowired 
+    private ProductService productService;
 
-    // private List<Product> products = new ArrayList<>(Arrays.asList(
-    // new Product(1, "Product 01", false, false, 1, "Arroz 1", 100.50),
-    // new Product(2, "Product 02", true, true, 2, "Arroz 2", 200.50),
-    // new Product(3, "Product 03", false, true, 3, "Arroz 3", 300.50),
-    // new Product(4, "Product 04", true, false, 4, "Arroz 4", 400.50)));
-
-    // int id, String description, boolean promotion, boolean newProduct, int
-    // idCategory, String name,
-    // double price
-    // após a construção do objeto esse método é chamado. Tipo inicializar
-    // as variaveis no método construtor, mas tem que colocar essar diretiva
-    // postConstruct
-    // @PostConstruct
-    // public void init() {
-
-    // Product p1 = new Product(1, "Arroz", 100.50);
-    // products.add(p1);
-
-    // Product p2 = new Product(2, "Feijão", 200.50);
-    // products.add(p2);
-
-    // Product p3 = new Product(3, "Picanha", 300.50);
-    // p3.setId(3);
-    // p3.setName("Picanha");
-    // p3.setPrice(300.50);
-    // products.add(p3);
-    // }
-    // um endpoint nunca pode deixar vazar um erro 500, é um erro da aplicação
-
-    // @PathVariable já é auto explicativo
+   
     @GetMapping("products/{id}")
     public ResponseEntity<Product> getProduct(@PathVariable int id) {
-        // if (id <= products.size())
-        // return ResponseEntity.ok(products.get(id - 1));
-        // else {
-        // // assim retorna um 404
-        // throw new ResponseStatusException(HttpStatus.NOT_FOUND, "product not found");
-        // // apache tomCAT
-        // // TEM QUE IR NO ARQUIVO DE PROPRIEDADES
-        // // Configuração de erro para não aparecer um monte de coisa
-        // // server.error.include-stacktrace=never
-        // // return ResponseEntity.notFound().build();
-        // }
-
-        // stream tem métodos que não tem na classe list
-        // programação funcional
-        Product prod = products.stream()
-                .filter(p -> p.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "product not found"));
-        return ResponseEntity.ok(prod);
+        return ResponseEntity.ok(productService.getById(id));
 
     }
 
     // aqui ctrl+.
     @GetMapping("products")
     public List<Product> getProducts() {
-        return products;
+        return  productRepository.findAll();
     }
 
     @PostMapping("products") // eu vou pegar o body dentro da requisição e vou transformar em produto
     public ResponseEntity<Product> saveProduct(@RequestBody Product product) {
-        product.setId(products.size() + 1);
-        products.add(product);
+        //ao atribuir o retorno do save
+        product = productRepository.save(product);
 
         // CTRL . para importar as bibliotecas
         URI location = ServletUriComponentsBuilder
@@ -114,4 +80,49 @@ public class ProductController {
         return ResponseEntity.created(location).body(product);
     }
 
+    @DeleteMapping("products/{id}") 
+    public ResponseEntity<Void> removeProduct(@PathVariable int id){  
+        Product prod = productRepository.findById(id)
+                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "product not found"));
+        
+        productRepository.delete(prod);
+        return ResponseEntity.noContent().build();
+
+    } 
+        // ResponseEntity.noContent(): Esse método retorna um objeto do tipo ResponseEntity. 
+        // odyBuilder.  
+        // Esse builder permite que você adicione informações adicionais na resposta, como cabeçalhos, 
+        //  antes de finalizar a construção da resposta.
+
+        // .build(): Aqui você está finalizando o processo de construção e criando a
+        // //  instância final de ResponseEntity<Void> com o status 204 No Content. 
+        // return ResponseEntity.noContent()
+        //              .header("Custom-Header", "Value")
+        //              .build();
+
+
+    //PUT ALTERA TUDO 
+    //PATCH ALTERA EM PARTE 
+    @PutMapping("products/{id}") 
+    public ResponseEntity<Void> updateProduct(@PathVariable int id,@RequestBody Product productUpdate){  
+        
+        Product prod = productRepository.findById(id)
+                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "product not found"));
+        if(productUpdate.getCategory()==null) 
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "category can not be empty");
+
+        Category cat = categoryRepository.findById(productUpdate.getCategory().getId())
+                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "category not found"));
+
+        prod.setDescription(productUpdate.getDescription()); 
+        prod.setName(productUpdate.getName()); 
+        prod.setPrice( productUpdate.getPrice()); 
+        prod.setPromotion(productUpdate.isPromotion()); 
+        prod.setNewProduct(productUpdate.isNewProduct());      
+        prod.setCategory(cat);
+
+        productRepository.save(prod);
+        return ResponseEntity.ok().build();
+
+    } 
 }
