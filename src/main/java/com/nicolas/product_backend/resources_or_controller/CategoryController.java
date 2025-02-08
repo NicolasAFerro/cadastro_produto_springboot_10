@@ -21,10 +21,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RestController 
 @CrossOrigin
 public class CategoryController {
-    private List<Category> categories = Arrays.asList(new Category(1, "Produção Própria"),
-            new Category(2, "Nacional"),
-            new Category(3, "Importado"), 
-            new Category(4, "Premium"));
+    // private List<Category> categories = Arrays.asList(new Category(1, "Produção Própria"),
+    //         new Category(2, "Nacional"),
+    //         new Category(3, "Importado"), 
+    //         new Category(4, "Premium"));
 
     @GetMapping("categories/{id}")
     public ResponseEntity<Category> getCategory(@PathVariable int id) {

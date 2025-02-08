@@ -2,11 +2,22 @@ package com.nicolas.product_backend.models;
 
 import java.security.PublicKey;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
+@Entity 
+@Table(name="TBL_PRODUCT")
 public class Product {
+    @Id
     private int id;
     private String description;
     private boolean promotion;
     private boolean newProduct;
+
+    //muitos produtos para uma categoria
+    @ManyToOne
     private Category category;
 
     public Product(int id, String description, boolean promotion, boolean newProduct, Category category, String name,
