@@ -1,23 +1,23 @@
 package com.nicolas.product_backend.resources_or_controller;
 
-import java.util.Arrays;
+
 import java.util.List;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException.NotFound;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import com.nicolas.product_backend.models.Category;
-import com.nicolas.product_backend.repositories.CategoryRepository;
+
+import com.nicolas.product_backend.services.CategoryService;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+
 // 
 //responde a requisições http
 @RestController 
@@ -32,20 +32,21 @@ public class CategoryController {
     //inicializar lá  
     //public CategoryService()
     //this.categoryRepository = new CategoryRepository();
-    @Autowired
-    private CategoryRepository categoryRepository;
+
+
+    @Autowired 
+    private CategoryService categoryService;
 
     @GetMapping("categories/{id}")
     public ResponseEntity<Category> getCategory(@PathVariable int id) {
-        Category cat = categoryRepository.findById(id)
-                                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
+        
 
-        return ResponseEntity.ok(cat);
+        return ResponseEntity.ok(categoryService.getById(id));
     }
 
     @GetMapping("categories")
     public List<Category> getCategory() {
-        return categoryRepository.findAll();
+        return categoryService.getAll();
     }
 
 }

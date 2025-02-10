@@ -1,33 +1,20 @@
 package com.nicolas.product_backend.resources_or_controller;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.nicolas.product_backend.models.Product; 
-import com.nicolas.product_backend.models.Category;
-import com.nicolas.product_backend.repositories.CategoryRepository;
-import com.nicolas.product_backend.repositories.ProductRepository;
 import com.nicolas.product_backend.services.ProductService;
-
-import jakarta.annotation.PostConstruct;
-
 import java.net.URI;
-import java.security.cert.CertPathValidatorException.Reason;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 //import java.util.Locale.Category;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,10 +32,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class ProductController {
 
     
-    @Autowired
-    private ProductRepository productRepository;    
-    @Autowired
-    private CategoryRepository categoryRepository;   
+   
     @Autowired 
     private ProductService productService;
 
@@ -62,13 +46,13 @@ public class ProductController {
     // aqui ctrl+.
     @GetMapping("products")
     public List<Product> getProducts() {
-        return  productRepository.findAll();
+        return  productService.getAll();
     }
 
     @PostMapping("products") // eu vou pegar o body dentro da requisição e vou transformar em produto
     public ResponseEntity<Product> saveProduct(@RequestBody Product product) {
         //ao atribuir o retorno do save
-        product = productRepository.save(product);
+        product = productService.save(product);
 
         // CTRL . para importar as bibliotecas
         URI location = ServletUriComponentsBuilder
@@ -82,10 +66,7 @@ public class ProductController {
 
     @DeleteMapping("products/{id}") 
     public ResponseEntity<Void> removeProduct(@PathVariable int id){  
-        Product prod = productRepository.findById(id)
-                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "product not found"));
-        
-        productRepository.delete(prod);
+       productService.deleteById(id);
         return ResponseEntity.noContent().build();
 
     } 
@@ -106,22 +87,7 @@ public class ProductController {
     @PutMapping("products/{id}") 
     public ResponseEntity<Void> updateProduct(@PathVariable int id,@RequestBody Product productUpdate){  
         
-        Product prod = productRepository.findById(id)
-                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "product not found"));
-        if(productUpdate.getCategory()==null) 
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "category can not be empty");
-
-        Category cat = categoryRepository.findById(productUpdate.getCategory().getId())
-                                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "category not found"));
-
-        prod.setDescription(productUpdate.getDescription()); 
-        prod.setName(productUpdate.getName()); 
-        prod.setPrice( productUpdate.getPrice()); 
-        prod.setPromotion(productUpdate.isPromotion()); 
-        prod.setNewProduct(productUpdate.isNewProduct());      
-        prod.setCategory(cat);
-
-        productRepository.save(prod);
+        productService.update(id, productUpdate);
         return ResponseEntity.ok().build();
 
     } 
